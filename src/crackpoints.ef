@@ -1,0 +1,70 @@
+module crackpoints_m
+  use const_base_m
+  use ut_m
+  implicit none
+  private
+  public :: CRACKPOINTS__NUM_MAX
+
+  integer <const> :: CRACKPOINTS__NUM_MAX = 1000
+
+  type crackpoints_pos_t
+    real(DR) :: x, y, z
+  end type crackpoints_pos_t
+
+  type, public :: crackpoints_t
+    integer :: nvisible
+    type(crackpoints_pos_t), dimension(CRACKPOINTS__NUM_MAX) :: pos
+    logical, dimension(CRACKPOINTS__NUM_MAX) :: visibility
+  contains
+    procedure :: check => crackpoints__check
+    procedure :: initialize => crackpoints__initialize
+  end type crackpoints_t
+
+
+contains
+
+
+  subroutine crackpoints__check( self )
+    class(crackpoints_t) <in> :: self
+
+    call ut__message( '__FUNC__: max pos x = ',    &
+                       maxval(self.pos.x,        &
+                         mask=self.visibility) )
+    call ut__message( '__FUNC__: min pos x = ',    &
+                       minval(self.pos.x,        &
+                         mask=self.visibility) )
+    call ut__message( '__FUNC__: max pos y = ',    &
+                       maxval(self.pos.y,        &
+                         mask=self.visibility) )
+    call ut__message( '__FUNC__: min pos y = ',    &
+                       minval(self.pos.y,        &
+                         mask=self.visibility) )
+    call ut__message( '__FUNC__: max pos z = ',    &
+                       maxval(self.pos.z,        &
+                         mask=self.visibility) )
+    call ut__message( '__FUNC__: min pos z = ',    &
+                       minval(self.pos.z,        &
+                         mask=self.visibility) )
+  end subroutine crackpoints__check  
+
+
+  subroutine crackpoints__initialize( self )
+    class(crackpoints_t) <out> :: self
+
+    integer :: i
+    real(DR), dimension(3) :: random_pos
+
+    self.visibility(:) = .false.
+    self.nvisible = 100
+
+    do i = 1, self.nvisible
+      call random_number(random_pos)
+      self.pos(i).x = random_pos(1)
+      self.pos(i).y = random_pos(2)
+      self.pos(i).z = random_pos(3)
+      self.visibility(i) = .true.
+    end do
+
+  end subroutine crackpoints__initialize
+
+end module crackpoints_m

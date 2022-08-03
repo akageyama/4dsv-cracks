@@ -1,0 +1,206 @@
+module vis_m
+  use const_base_m
+  use crackpoints_m
+  use ut_m
+  use vismo
+  implicit none
+  private
+  public :: vis
+
+  type vismo_params_common_to_all_processes_t
+    integer, dimension(3) :: grid_num
+    real(DR), dimension(3) :: corner_pos
+    real(DR), dimension(3) :: dgrid
+  end type vismo_params_common_to_all_processes_t
+
+  type vismo_params_local_to_each_process_t
+    integer, dimension(3) :: grid_num
+    integer, dimension(3) :: grid_num_used_in_vismo
+    integer, dimension(3) :: left_most_grid_used_in_vismo
+    real(DR), dimension(3) :: corner_pos
+  end type vismo_params_local_to_each_process_t
+
+  type vismo_particles_t
+    real(DR), dimension(CRACKPOINTS__NUM_MAX) :: pos_x, pos_y, pos_z
+    real(DR), dimension(CRACKPOINTS__NUM_MAX) :: color
+    integer,  dimension(CRACKPOINTS__NUM_MAX) :: visibility
+  end type vismo_particles_t
+
+  type, public :: vis_t
+!   real(DR), dimension(0:NXPP1,0:NYPP1,0:NZPP1) :: sfield
+    type(vismo_particles_t) :: particles
+  contains
+    procedure, nopass :: initialize => vis__initialize
+    procedure, nopass :: finalize => vis__finalize
+    procedure, nopass :: visualize => vis__visualize
+  end type vis_t
+
+  type(vis_t) :: vis
+
+
+contains
+
+
+  subroutine set_particles( crackpoints )
+    type(crackpoints_t) <in> :: crackpoints
+
+    integer :: i
+    integer <const> :: VISIBILITY_ON  = 0  ! defined by VISMO
+    integer <const> :: VISIBILITY_OFF = 1  ! defined by VISMO
+
+    vis.particles.visibility(i) = VISIBILITY_OFF
+
+    do i = 1, crackpoints.nvisible
+      call ut__assert( crackpoints.visibility(i),  &
+                "__MODFUNC__: visibility inconsistent." )
+      vis.particles.pos_x(i) = crackpoints.pos(i).x
+      vis.particles.pos_y(i) = crackpoints.pos(i).y
+      vis.particles.pos_z(i) = crackpoints.pos(i).z
+      vis.particles.visibility(i) = VISIBILITY_ON
+      vis.particles.color(i) = 1
+    end do
+
+  end subroutine set_particles
+
+
+  subroutine set_vismo_params_common_to_all_processes( global )
+    type(vismo_params_common_to_all_processes_t) <out> :: global
+
+!!>
+    global.grid_num(1) = NX_GLOBAL  
+    global.grid_num(2) = NY_GLOBAL  
+    global.grid_num(3) = NZ_GLOBAL  
+    global.dgrid(1) = 1.0_DR  ! A cell's edge length = 1.0
+    global.dgrid(2) = 1.0_DR  
+    global.dgrid(3) = 1.0_DR  
+    global.corner_pos(1) = 0.0_DR  ! Set the coordinates
+    global.corner_pos(2) = 0.0_DR  !   origin at the corner
+    global.corner_pos(3) = 0.0_DR  !   of the simulation region.
+!!<
+
+    global.grid_num(1) = 10
+    global.grid_num(2) = 10
+    global.grid_num(3) = 10
+    global.dgrid(1) = 1.0_DR / (10-1)
+    global.dgrid(2) = 1.0_DR / (10-1)
+    global.dgrid(3) = 1.0_DR / (10-1)
+    global.corner_pos(1) = 0.0_DR  ! Set the coordinates
+    global.corner_pos(2) = 0.0_DR  !   origin at the corner
+    global.corner_pos(3) = 0.0_DR  !   of the simulation region.
+
+  end subroutine set_vismo_params_common_to_all_processes
+
+
+  subroutine set_vismo_params_local_to_each_process( local, crackpoints )
+    type(vismo_params_local_to_each_process_t) <out> :: local
+    type(crackpoints_t) <in> :: crackpoints
+
+!!>
+    local.grid_num(1) = NXPP + 2  ! array(0:NXPP1)
+    local.grid_num(2) = NYPP + 2  
+    local.grid_num(3) = NZPP + 2  
+   
+    if ( parallel.i_have_xmin ) then
+       local.left_most_grid_used_in_vismo(1) = 2
+       local.grid_num_used_in_vismo(1) = NXPP
+       local.corner_pos(1) = automaton.cell_global_pos.i(0)
+    else
+       local.left_most_grid_used_in_vismo(1) = 1
+       local.grid_num_used_in_vismo(1) = NXPP1
+       local.corner_pos(1) = automaton.cell_global_pos.i(0)
+    end if
+
+    if ( parallel.i_have_ymin ) then
+       local.left_most_grid_used_in_vismo(2) = 2
+       local.grid_num_used_in_vismo(2) = NYPP
+       local.corner_pos(2) = automaton.cell_global_pos.j(0)
+    else
+       local.left_most_grid_used_in_vismo(2) = 1
+       local.grid_num_used_in_vismo(2) = NYPP1
+       local.corner_pos(2) = automaton.cell_global_pos.j(0)
+    end if
+
+    if ( parallel.i_have_zmin ) then
+       local.left_most_grid_used_in_vismo(3) = 2
+       local.grid_num_used_in_vismo(3) = NZPP
+       local.corner_pos(3) = automaton.cell_global_pos.k(0)
+    else
+       local.left_most_grid_used_in_vismo(3) = 1
+       local.grid_num_used_in_vismo(3) = NZPP1
+       local.corner_pos(3) = automaton.cell_global_pos.k(0)
+    end if  
+!!<
+
+    local.grid_num(1) = 10
+    local.grid_num(2) = 10
+    local.grid_num(3) = 10
+
+    local.left_most_grid_used_in_vismo(1) = 1
+    local.grid_num_used_in_vismo(1) = 10
+    local.corner_pos(1) = 0.0_DR
+    local.left_most_grid_used_in_vismo(2) = 1
+    local.grid_num_used_in_vismo(2) = 10
+    local.corner_pos(2) = 0.0_DR
+    local.left_most_grid_used_in_vismo(3) = 1
+    local.grid_num_used_in_vismo(3) = 10
+    local.corner_pos(3) = 0.0_DR
+
+  end subroutine set_vismo_params_local_to_each_process
+
+
+  subroutine vis__initialize( crackpoints )
+    type(crackpoints_t) <in> :: crackpoints
+
+    type(vismo_params_common_to_all_processes_t) :: global_param
+    type(vismo_params_local_to_each_process_t) :: local_param
+
+    call set_vismo_params_common_to_all_processes( global_param )
+    call set_vismo_params_local_to_each_process( local_param, crackpoints )
+
+!>    call vismo__init( MPI_COMM_WORLD,  &
+!>                      parallel.myrank,  &
+!>                      parallel.nprocs,  &
+!>                      "vismo.config" )
+    call vismo__init( "vismo.config" )
+
+    call vismo__addPtclCol( vis.particles.pos_x,  &
+                            vis.particles.pos_y,  &
+                            vis.particles.pos_z,  &
+                            vis.particles.visibility,  &
+                            vis.particles.color,  &
+                            CRACKPOINTS__NUM_MAX )
+
+    call vismo__initCoords( vismo__uniform )
+
+    call vismo__setUniCoord( global_param.grid_num,  &
+                             global_param.corner_pos,  &
+                             global_param.dgrid )
+
+    call vismo__setLocalUniCoord( local_param.grid_num,  &
+                                  local_param.left_most_grid_used_in_vismo,  &
+                                  local_param.grid_num_used_in_vismo,  &
+                                  local_param.corner_pos,  &
+                                  global_param.dgrid )
+
+    call vismo__prepareVis
+
+  end subroutine vis__initialize
+
+
+  subroutine vis__visualize( crackpoints )
+    type(crackpoints_t) <in> :: crackpoints
+
+    call set_particles( crackpoints )
+    call vismo__visualization( 0 )
+
+  end subroutine vis__visualize
+
+
+  subroutine vis__finalize
+
+    call vismo__finalize
+
+  end subroutine vis__finalize
+
+end module vis_m
+

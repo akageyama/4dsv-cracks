@@ -1,0 +1,16 @@
+program main
+  use const_base_m
+  use crackpoints_m
+  use vis_m
+  implicit none
+
+  type(crackpoints_t) :: crackpoints
+
+  call const_base__check
+  call crackpoints.initialize
+  call crackpoints.check
+  call vis.initialize( crackpoints )
+  call vis.visualize( crackpoints )
+
+end program main
+
