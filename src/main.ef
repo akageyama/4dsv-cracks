@@ -6,10 +6,17 @@ program main
 
   type(crackpoints_t) :: crackpoints
 
+  integer :: step
+
   call const_base__check
   call crackpoints.initialize
   call crackpoints.check
-  call vis.initialize( crackpoints )
+  
+  do step = 0, 100
+    call crackpoints.read_file
+  end do
+
+  call vis.initialize
   call vis.visualize( crackpoints )
 
 end program main

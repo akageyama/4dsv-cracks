@@ -1,0 +1,22 @@
+module const_sim_m
+  use const_base_m
+  implicit none
+  private
+  public :: FILE_NUM
+
+  !<< I/O >>!
+  type, public :: file_num_t
+    integer :: standard_in
+    integer :: standard_out
+    integer :: crackdata
+  end type file_num_t
+
+  type (file_num_t) <const> ::    &
+     FILE_NUM =                   &
+        file_num_t (              &
+                     05,          & ! standard_in
+                     06,          & ! standard_out
+                     10           & ! crackdata
+                   )
+
+end module const_sim_m

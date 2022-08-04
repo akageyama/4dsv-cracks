@@ -48,9 +48,9 @@ contains
     integer <const> :: VISIBILITY_ON  = 0  ! defined by VISMO
     integer <const> :: VISIBILITY_OFF = 1  ! defined by VISMO
 
-    vis.particles.visibility(i) = VISIBILITY_OFF
+    vis.particles.visibility(:) = VISIBILITY_OFF
 
-    do i = 1, crackpoints.nvisible
+    do i = 1, crackpoints.num
       call ut__assert( crackpoints.visibility(i),  &
                 "__MODFUNC__: visibility inconsistent." )
       vis.particles.pos_x(i) = crackpoints.pos(i).x
@@ -91,9 +91,8 @@ contains
   end subroutine set_vismo_params_common_to_all_processes
 
 
-  subroutine set_vismo_params_local_to_each_process( local, crackpoints )
+  subroutine set_vismo_params_local_to_each_process( local )
     type(vismo_params_local_to_each_process_t) <out> :: local
-    type(crackpoints_t) <in> :: crackpoints
 
 !!>
     local.grid_num(1) = NXPP + 2  ! array(0:NXPP1)
@@ -148,14 +147,12 @@ contains
   end subroutine set_vismo_params_local_to_each_process
 
 
-  subroutine vis__initialize( crackpoints )
-    type(crackpoints_t) <in> :: crackpoints
-
+  subroutine vis__initialize
     type(vismo_params_common_to_all_processes_t) :: global_param
     type(vismo_params_local_to_each_process_t) :: local_param
 
     call set_vismo_params_common_to_all_processes( global_param )
-    call set_vismo_params_local_to_each_process( local_param, crackpoints )
+    call set_vismo_params_local_to_each_process( local_param )
 
 !>    call vismo__init( MPI_COMM_WORLD,  &
 !>                      parallel.myrank,  &

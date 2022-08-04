@@ -1,5 +1,6 @@
 module crackpoints_m
   use const_base_m
+  use const_sim_m
   use ut_m
   implicit none
   private
@@ -7,17 +8,20 @@ module crackpoints_m
 
   integer <const> :: CRACKPOINTS__NUM_MAX = 1000
 
+  char(len=*) <const> :: DATA_DIR = "../crackdata/220519_hirobe/"
+
   type crackpoints_pos_t
     real(DR) :: x, y, z
   end type crackpoints_pos_t
 
   type, public :: crackpoints_t
-    integer :: nvisible
+    integer :: num
     type(crackpoints_pos_t), dimension(CRACKPOINTS__NUM_MAX) :: pos
     logical, dimension(CRACKPOINTS__NUM_MAX) :: visibility
   contains
     procedure :: check => crackpoints__check
     procedure :: initialize => crackpoints__initialize
+    procedure :: read_file => crackpoints__read_file
   end type crackpoints_t
 
 
@@ -55,9 +59,9 @@ contains
     real(DR), dimension(3) :: random_pos
 
     self.visibility(:) = .false.
-    self.nvisible = 100
+    self.num = 100
 
-    do i = 1, self.nvisible
+    do i = 1, self.num
       call random_number(random_pos)
       self.pos(i).x = random_pos(1)
       self.pos(i).y = random_pos(2)
@@ -65,6 +69,75 @@ contains
       self.visibility(i) = .true.
     end do
 
+    open( FILE_NUM.crackdata,  &
+          file=DATA_DIR//"/"//"crack00000.dat",  &
+          status="old" )
+
+    read( FILE_NUM.crackdata, * ) i
+    print *, " i = ", i
+    close( FILE_NUM.crackdata )
+
   end subroutine crackpoints__initialize
+
+
+  subroutine crackpoints__read_file( self )
+    class( crackpoints_t ) <out> :: self
+!!>
+    Assumed data format is
+        line 01: npoints   # num of newly born points
+        line 02: x y z     # coords of 1st point
+        line 03: x y z     # coords of 2nd point
+        ...
+
+    sample from crack00000.dat.
+        7438
+        0.005 0.00249396 0.0004
+        0.005 0.00249095 0.000403468
+        0.00499432 0.00249198 0.0004
+        ...
+!!<    
+    integer :: step_counter = 0  ! automatic save
+    real(DR) :: x, y, z
+    integer :: line
+
+
+    call iFile_open( step_counter )
+      call iGet_npoints( self.num )
+      print *, " step_counter: npoints = ", step_counter, self.num
+      do line = 1, self.num 
+        call iRead_coords( x, y, z )
+        print *, "     x, y, z = ", x, y, z
+      end do
+    call iFile_close
+
+    step_counter += 1
+  
+  contains
+    
+    subroutine iGet_npoints( n )
+      integer <out> :: n
+      read( FILE_NUM.crackdata, * ) n
+    end subroutine iGet_npoints
+
+    subroutine iFile_open( step )
+      integer <in> :: step
+      char(len=14) :: filename ! e.g., "crack00000.dat"
+      filename = "crack" // ut__i2c5(step) // ".dat"
+      open( FILE_NUM.crackdata,  &
+            file=DATA_DIR//"/"//filename,  &
+            status="old" )
+    end subroutine iFile_open
+
+    subroutine iFile_close
+      close( FILE_NUM.crackdata )
+    end subroutine iFile_close
+
+    subroutine iRead_coords( x, y, z )
+      real(DR) <out> :: x, y, z
+      read( FILE_NUM.crackdata, * ) x, y, z
+    end subroutine iRead_coords
+
+  end subroutine crackpoints__read_file
+
 
 end module crackpoints_m
