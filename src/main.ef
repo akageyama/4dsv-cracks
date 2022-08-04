@@ -15,7 +15,7 @@ program main
   call crackpoints.initialize
   call vis.initialize
   
-  do step = 0, 5000
+  do step = 0, 22609
     call crackpoints.read_file( crack_is_growing )
     call crackpoints.check
     if ( crack_is_growing ) then
