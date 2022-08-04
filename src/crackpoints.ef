@@ -6,7 +6,7 @@ module crackpoints_m
   private
   public :: CRACKPOINTS__NUM_MAX
 
-  integer <const> :: CRACKPOINTS__NUM_MAX = 1000
+  integer <const> :: CRACKPOINTS__NUM_MAX = 10000
 
   char(len=*) <const> :: DATA_DIR = "../crackdata/220519_hirobe/"
 
@@ -15,7 +15,8 @@ module crackpoints_m
   end type crackpoints_pos_t
 
   type, public :: crackpoints_t
-    integer :: num
+    integer :: step_counter
+    integer :: num_accumulated
     type(crackpoints_pos_t), dimension(CRACKPOINTS__NUM_MAX) :: pos
     logical, dimension(CRACKPOINTS__NUM_MAX) :: visibility
   contains
@@ -58,30 +59,31 @@ contains
     integer :: i
     real(DR), dimension(3) :: random_pos
 
+    self.step_counter = 0
     self.visibility(:) = .false.
-    self.num = 100
+    self.num_accumulated = 0
 
-    do i = 1, self.num
-      call random_number(random_pos)
-      self.pos(i).x = random_pos(1)
-      self.pos(i).y = random_pos(2)
-      self.pos(i).z = random_pos(3)
-      self.visibility(i) = .true.
-    end do
+    ! do i = 1, self.num_accumulated
+    !   call random_number(random_pos)
+    !   self.pos(i).x = random_pos(1)
+    !   self.pos(i).y = random_pos(2)
+    !   self.pos(i).z = random_pos(3)
+    !   self.visibility(i) = .true.
+    ! end do
 
-    open( FILE_NUM.crackdata,  &
-          file=DATA_DIR//"/"//"crack00000.dat",  &
-          status="old" )
+    ! open( FILE_NUM.crackdata,  &
+    !       file=DATA_DIR//"/"//"crack00000.dat",  &
+    !       status="old" )
 
-    read( FILE_NUM.crackdata, * ) i
-    print *, " i = ", i
-    close( FILE_NUM.crackdata )
+    ! read( FILE_NUM.crackdata, * ) i
+    ! print *, " i = ", i
+    ! close( FILE_NUM.crackdata )
 
   end subroutine crackpoints__initialize
 
 
   subroutine crackpoints__read_file( self )
-    class( crackpoints_t ) <out> :: self
+    class( crackpoints_t ) <io> :: self
 !!>
     Assumed data format is
         line 01: npoints   # num of newly born points
@@ -96,22 +98,33 @@ contains
         0.00499432 0.00249198 0.0004
         ...
 !!<    
-    integer :: step_counter = 0  ! automatic save
+
     real(DR) :: x, y, z
     integer :: line
+!    integer :: cnt  ! step counter
+!    integer :: npa  ! number of points accumulated 
+    integer :: npoints_newly_born
 
-
-    call iFile_open( step_counter )
-      call iGet_npoints( self.num )
-      print *, " step_counter: npoints = ", step_counter, self.num
-      do line = 1, self.num 
-        call iRead_coords( x, y, z )
-        print *, "     x, y, z = ", x, y, z
-      end do
-    call iFile_close
-
-    step_counter += 1
-  
+    ! npa = self.num_accumulated
+    ! cnt = self.step_counter
+    associate (npa => self.num_accumulated, &
+               cnt => self.step_counter)
+      call iFile_open( cnt )
+        call iGet_npoints( npoints_newly_born )
+        print *, " step_counter: npoints = ", cnt, npoints_newly_born
+        do line = 1, npoints_newly_born 
+          call iRead_coords( x, y, z )
+  !       print *, "     x, y, z = ", x, y, z
+          npa += 1
+          self.pos(npa).x = x
+          self.pos(npa).y = y
+          self.pos(npa).z = z
+          self.visibility(npa) = .true.
+        end do
+!        self.num_accumulated = npa
+      call iFile_close
+      cnt += 1
+    end associate
   contains
     
     subroutine iGet_npoints( n )

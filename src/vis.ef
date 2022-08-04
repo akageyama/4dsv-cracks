@@ -1,5 +1,6 @@
 module vis_m
   use const_base_m
+  use const_sim_m
   use crackpoints_m
   use ut_m
   use vismo
@@ -50,7 +51,7 @@ contains
 
     vis.particles.visibility(:) = VISIBILITY_OFF
 
-    do i = 1, crackpoints.num
+    do i = 1, crackpoints.num_accumulated
       call ut__assert( crackpoints.visibility(i),  &
                 "__MODFUNC__: visibility inconsistent." )
       vis.particles.pos_x(i) = crackpoints.pos(i).x
@@ -66,6 +67,13 @@ contains
   subroutine set_vismo_params_common_to_all_processes( global )
     type(vismo_params_common_to_all_processes_t) <out> :: global
 
+    integer <const> :: WORK_GRID_NX = 10  ! any int > 1
+    integer <const> :: WORK_GRID_NY = 10
+    integer <const> :: WORK_GRID_NZ = 10
+    real(DR) :: simlen_x = SIMULATION_REGION.xmax - SIMULATION_REGION.xmin
+    real(DR) :: simlen_y = SIMULATION_REGION.ymax - SIMULATION_REGION.ymin
+    real(DR) :: simlen_z = SIMULATION_REGION.zmax - SIMULATION_REGION.zmin
+
 !!>
     global.grid_num(1) = NX_GLOBAL  
     global.grid_num(2) = NY_GLOBAL  
@@ -78,20 +86,21 @@ contains
     global.corner_pos(3) = 0.0_DR  !   of the simulation region.
 !!<
 
-    global.grid_num(1) = 10
-    global.grid_num(2) = 10
-    global.grid_num(3) = 10
-    global.dgrid(1) = 1.0_DR / (10-1)
-    global.dgrid(2) = 1.0_DR / (10-1)
-    global.dgrid(3) = 1.0_DR / (10-1)
-    global.corner_pos(1) = 0.0_DR  ! Set the coordinates
-    global.corner_pos(2) = 0.0_DR  !   origin at the corner
-    global.corner_pos(3) = 0.0_DR  !   of the simulation region.
+    global.grid_num(1) = WORK_GRID_NX
+    global.grid_num(2) = WORK_GRID_NY
+    global.grid_num(3) = WORK_GRID_NZ
+    global.dgrid(1) = simlen_x / (WORK_GRID_NX-1)
+    global.dgrid(2) = simlen_y / (WORK_GRID_NY-1)
+    global.dgrid(3) = simlen_z / (WORK_GRID_NZ-1)
+    global.corner_pos(1) = SIMULATION_REGION.xmin
+    global.corner_pos(2) = SIMULATION_REGION.ymin
+    global.corner_pos(3) = SIMULATION_REGION.zmin
 
   end subroutine set_vismo_params_common_to_all_processes
 
 
-  subroutine set_vismo_params_local_to_each_process( local )
+  subroutine set_vismo_params_local_to_each_process( global, local )
+    type(vismo_params_common_to_all_processes_t) <in> :: global
     type(vismo_params_local_to_each_process_t) <out> :: local
 
 !!>
@@ -130,19 +139,19 @@ contains
     end if  
 !!<
 
-    local.grid_num(1) = 10
-    local.grid_num(2) = 10
-    local.grid_num(3) = 10
+    local.grid_num(1) = global.grid_num(1)
+    local.grid_num(2) = global.grid_num(2)
+    local.grid_num(3) = global.grid_num(3)
 
     local.left_most_grid_used_in_vismo(1) = 1
-    local.grid_num_used_in_vismo(1) = 10
-    local.corner_pos(1) = 0.0_DR
+    local.grid_num_used_in_vismo(1) = local.grid_num(1)
+    local.corner_pos(1) = SIMULATION_REGION.xmin
     local.left_most_grid_used_in_vismo(2) = 1
-    local.grid_num_used_in_vismo(2) = 10
-    local.corner_pos(2) = 0.0_DR
+    local.grid_num_used_in_vismo(2) = local.grid_num(2)
+    local.corner_pos(2) = SIMULATION_REGION.ymin
     local.left_most_grid_used_in_vismo(3) = 1
-    local.grid_num_used_in_vismo(3) = 10
-    local.corner_pos(3) = 0.0_DR
+    local.grid_num_used_in_vismo(3) = local.grid_num(3)
+    local.corner_pos(3) = SIMULATION_REGION.zmin
 
   end subroutine set_vismo_params_local_to_each_process
 
@@ -152,7 +161,7 @@ contains
     type(vismo_params_local_to_each_process_t) :: local_param
 
     call set_vismo_params_common_to_all_processes( global_param )
-    call set_vismo_params_local_to_each_process( local_param )
+    call set_vismo_params_local_to_each_process( global_param, local_param )
 
 !>    call vismo__init( MPI_COMM_WORLD,  &
 !>                      parallel.myrank,  &
@@ -188,7 +197,7 @@ contains
     type(crackpoints_t) <in> :: crackpoints
 
     call set_particles( crackpoints )
-    call vismo__visualization( 0 )
+    call vismo__visualization( crackpoints.step_counter )
 
   end subroutine vis__visualize
 

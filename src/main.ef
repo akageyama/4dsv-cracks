@@ -1,5 +1,6 @@
 program main
   use const_base_m
+  use const_sim_m
   use crackpoints_m
   use vis_m
   implicit none
@@ -9,15 +10,18 @@ program main
   integer :: step
 
   call const_base__check
+  call const_sim__check
   call crackpoints.initialize
-  call crackpoints.check
+  call vis.initialize
   
-  do step = 0, 100
+  do step = 0, 2
     call crackpoints.read_file
+    call crackpoints.check
+    call vis.visualize( crackpoints )
   end do
 
-  call vis.initialize
-  call vis.visualize( crackpoints )
+  print *,' crackpoints.num_accumlated = ', crackpoints.num_accumulated
+
 
 end program main
 

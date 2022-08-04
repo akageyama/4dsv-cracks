@@ -1,8 +1,34 @@
 module const_sim_m
   use const_base_m
+  use ut_m
   implicit none
   private
   public :: FILE_NUM
+  public :: SIMULATION_REGION
+  public :: const_sim__check
+
+  type :: simulation_region_t
+    real(DR) :: xmin, xmax
+    real(DR) :: ymin, ymax
+    real(DR) :: zmin, zmax
+  end type simulation_region_t
+
+  real(DR) <const> :: mm_  = 1.e-3_DR  ! mili-meter
+  real(DR) <const> :: simulation_region_xmin_ =  0.0_DR * mm_
+  real(DR) <const> :: simulation_region_xmax_ = 30.0_DR * mm_
+  real(DR) <const> :: simulation_region_ymin_ =  0.0_DR * mm_
+  real(DR) <const> :: simulation_region_ymax_ =  2.0_DR * mm_
+  real(DR) <const> :: simulation_region_zmin_ =  0.0_DR * mm_
+  real(DR) <const> :: simulation_region_zmax_ =  0.7_DR * mm_
+
+  type (simulation_region_t) <const> ::  &
+     SIMULATION_REGION =  &
+        simulation_region_t (simulation_region_xmin_, &
+                             simulation_region_xmax_, &
+                             simulation_region_ymin_, &
+                             simulation_region_ymax_, &
+                             simulation_region_zmin_, &
+                             simulation_region_zmax_)
 
   !<< I/O >>!
   type, public :: file_num_t
@@ -18,5 +44,22 @@ module const_sim_m
                      06,          & ! standard_out
                      10           & ! crackdata
                    )
+
+contains
+
+  subroutine const_sim__check
+    call ut__message_leader( "SIMULATION_REGION.xmin",  &
+                              SIMULATION_REGION.xmin )
+    call ut__message_leader( "SIMULATION_REGION.xmax",  &
+                              SIMULATION_REGION.xmax )
+    call ut__message_leader( "SIMULATION_REGION.ymin",  &
+                              SIMULATION_REGION.ymin )
+    call ut__message_leader( "SIMULATION_REGION.ymax",  &
+                              SIMULATION_REGION.ymax )
+    call ut__message_leader( "SIMULATION_REGION.zmin",  &
+                              SIMULATION_REGION.zmin )
+    call ut__message_leader( "SIMULATION_REGION.zmax",  &
+                              SIMULATION_REGION.zmax )
+  end subroutine const_sim__check
 
 end module const_sim_m
