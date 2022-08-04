@@ -8,16 +8,19 @@ program main
   type(crackpoints_t) :: crackpoints
 
   integer :: step
+  logical :: crack_is_growing
 
   call const_base__check
   call const_sim__check
   call crackpoints.initialize
   call vis.initialize
   
-  do step = 0, 2
-    call crackpoints.read_file
+  do step = 0, 5000
+    call crackpoints.read_file( crack_is_growing )
     call crackpoints.check
-    call vis.visualize( crackpoints )
+    if ( crack_is_growing ) then
+      call vis.visualize( crackpoints )
+    end if
   end do
 
   print *,' crackpoints.num_accumlated = ', crackpoints.num_accumulated

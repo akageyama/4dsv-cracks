@@ -17,7 +17,7 @@ module const_sim_m
   real(DR) <const> :: simulation_region_xmin_ =  0.0_DR * mm_
   real(DR) <const> :: simulation_region_xmax_ = 30.0_DR * mm_
   real(DR) <const> :: simulation_region_ymin_ =  0.0_DR * mm_
-  real(DR) <const> :: simulation_region_ymax_ =  2.0_DR * mm_
+  real(DR) <const> :: simulation_region_ymax_ =  5.0_DR * mm_
   real(DR) <const> :: simulation_region_zmin_ =  0.0_DR * mm_
   real(DR) <const> :: simulation_region_zmax_ =  0.7_DR * mm_
 

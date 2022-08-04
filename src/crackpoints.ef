@@ -6,7 +6,7 @@ module crackpoints_m
   private
   public :: CRACKPOINTS__NUM_MAX
 
-  integer <const> :: CRACKPOINTS__NUM_MAX = 10000
+  integer <const> :: CRACKPOINTS__NUM_MAX = 100000
 
   char(len=*) <const> :: DATA_DIR = "../crackdata/220519_hirobe/"
 
@@ -32,23 +32,23 @@ contains
   subroutine crackpoints__check( self )
     class(crackpoints_t) <in> :: self
 
-    call ut__message( '__FUNC__: max pos x = ',    &
-                       maxval(self.pos.x,        &
-                         mask=self.visibility) )
     call ut__message( '__FUNC__: min pos x = ',    &
                        minval(self.pos.x,        &
                          mask=self.visibility) )
-    call ut__message( '__FUNC__: max pos y = ',    &
-                       maxval(self.pos.y,        &
+    call ut__message( '__FUNC__: max pos x = ',    &
+                       maxval(self.pos.x,        &
                          mask=self.visibility) )
     call ut__message( '__FUNC__: min pos y = ',    &
                        minval(self.pos.y,        &
                          mask=self.visibility) )
-    call ut__message( '__FUNC__: max pos z = ',    &
-                       maxval(self.pos.z,        &
+    call ut__message( '__FUNC__: max pos y = ',    &
+                       maxval(self.pos.y,        &
                          mask=self.visibility) )
     call ut__message( '__FUNC__: min pos z = ',    &
                        minval(self.pos.z,        &
+                         mask=self.visibility) )
+    call ut__message( '__FUNC__: max pos z = ',    &
+                       maxval(self.pos.z,        &
                          mask=self.visibility) )
   end subroutine crackpoints__check  
 
@@ -82,8 +82,9 @@ contains
   end subroutine crackpoints__initialize
 
 
-  subroutine crackpoints__read_file( self )
+  subroutine crackpoints__read_file( self, grow )
     class( crackpoints_t ) <io> :: self
+    logical <optout> :: grow
 !!>
     Assumed data format is
         line 01: npoints   # num of newly born points
@@ -112,6 +113,10 @@ contains
       call iFile_open( cnt )
         call iGet_npoints( npoints_newly_born )
         print *, " step_counter: npoints = ", cnt, npoints_newly_born
+        if ( present(grow) ) then
+          grow = .false.  ! default
+          if ( npoints_newly_born > 0 ) grow = .true.
+        end if
         do line = 1, npoints_newly_born 
           call iRead_coords( x, y, z )
   !       print *, "     x, y, z = ", x, y, z
