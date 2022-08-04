@@ -1310,7 +1310,7 @@ contains
 
     if ( i < 0 ) then
        ut__i2c5 = 'NNNNN'
-    else if ( i > 9999 ) then
+    else if ( i > 99999 ) then
        ut__i2c5 = 'XXXXX'
     else
        write(ut__i2c5,'(i5.5)') i
